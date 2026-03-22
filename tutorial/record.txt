@@ -1,0 +1,9 @@
+Cuong: 7 lần 
+Tuan: 6 lần 
+Khanh: 7 lần 
+Minh: 10 lần 
+Thuy: 7 lần 
+Tin: 4 lần 
+Huy: 4 lần 
+Tien: 2 lần 
+Chien: 4 lần 
