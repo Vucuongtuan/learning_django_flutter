@@ -39,7 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    'backend'
+    'apps.rooms',
+    'apps.tenants',
+    'apps.leases',
+    'apps.bookings',
+    'apps.utilities',
+    'apps.billing',
+    'apps.notifications',
 ]
 
 MIDDLEWARE = [
