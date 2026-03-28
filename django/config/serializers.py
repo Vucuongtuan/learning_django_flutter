@@ -9,13 +9,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('username', 'password', 'email', 'first_name', 'last_name')
 
     def create(self, validated_data):
-        # Tạo user ở trạng thái inactive
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
             email=validated_data['email'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            is_active=False # Quan trọng: Phải chờ admin duyệt
+            is_active=False
         )
         return user

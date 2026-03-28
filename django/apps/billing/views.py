@@ -22,7 +22,7 @@ class DiscountViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def bulk_apply(self, request):
-        scope = request.data.get('scope', 'all') # 'all', 'rooms', 'leases'
+        scope = request.data.get('scope', 'all')
         ids = request.data.get('ids', [])
         discount_type = request.data.get('discount_type')
         value = request.data.get('value')
@@ -102,16 +102,13 @@ class MonthlyInvoiceViewSet(viewsets.ModelViewSet):
                 invoice.paid_date = timezone.now().date()
                 invoice.save()
 
-                # Tự động gửi thông báo cho khách thuê
                 tenant_user = invoice.lease.tenant.user
                 if tenant_user:
                     title = "Thanh toán thành công"
                     message = f"Hóa đơn tháng {invoice.billing_month.strftime('%m/%Y')} cho phòng {invoice.lease.room.name} đã được thanh toán thành công. Cảm ơn bạn!"
 
-                    # Lưu vào Database
                     Notification.objects.create(recipient=tenant_user, title=title, message=message, level="success")
 
-                    # Gửi Push Notification thực tế lên Flutter
                     send_push_notification(tenant_user, title, message)
 
                 return Response({"status": "Hóa đơn đã được xác nhận thanh toán", "paid_date": invoice.paid_date})

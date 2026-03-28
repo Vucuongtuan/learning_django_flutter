@@ -10,21 +10,18 @@ from rest_framework.views import APIView
 from .serializers import RegisterSerializer
 
 class RegisterView(APIView):
-    permission_classes = [permissions.AllowAny] # Cho phép ai cũng được đăng ký
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
 
-            # Tạo token kích hoạt
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             
-            # URL duyệt tài khoản (Bạn thay đổi domain nếu cần)
             activation_link = f"http://localhost:8000/api/activate/{uid}/{token}/"
             
-            # Gửi mail cho Admin
             subject = f"Yêu cầu đăng ký tài khoản mới: {user.username}"
             message = (
                 f"Thông tin tài khoản mới:\n"
@@ -39,7 +36,7 @@ class RegisterView(APIView):
                 subject,
                 message,
                 settings.DEFAULT_FROM_EMAIL,
-                [settings.ADMIN_EMAIL], # Gửi đến admin
+                [settings.ADMIN_EMAIL],
                 fail_silently=False,
             )
 

@@ -31,7 +31,6 @@ class Room(models.Model):
             from apps.notifications.models import Notification
             from apps.leases.models import Lease
             
-            # Tìm tất cả các khách đang thuê phòng này (Active Lease)
             active_leases = Lease.objects.filter(room=self, status="active")
             for lease in active_leases:
                 if lease.tenant.user:

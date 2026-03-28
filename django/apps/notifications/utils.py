@@ -4,8 +4,6 @@ from firebase_admin import messaging, credentials
 from django.conf import settings
 from .models import FCMDevice
 
-# Khởi tạo Firebase Admin SDK (Chỉ một lần duy nhất khi khởi động ứng dụng)
-# Bạn cần để file serviceAccountKey.json vào thư mục config/ hoặc ROOT của dự án
 FIREBASE_CRED_PATH = os.path.join(settings.BASE_DIR, 'config', 'serviceAccountKey.json')
 
 def initialize_firebase():
@@ -26,20 +24,17 @@ def send_push_notification(user, title, body, data=None):
     """
     initialize_firebase()
     
-    # Lấy tất cả các thiết bị đang hoạt động của người dùng này
     devices = FCMDevice.objects.filter(user=user, is_active=True)
     tokens = list(devices.values_list('registration_id', flat=True))
 
     if not tokens:
         return 0
 
-    # Tạo tin nhắn thông báo (Notification)
     notification = messaging.Notification(
         title=title,
         body=body
     )
 
-    # Nếu chỉ có 1 token, gửi tin nhắn đơn
     if len(tokens) == 1:
         message = messaging.Message(
             notification=notification,
@@ -53,7 +48,6 @@ def send_push_notification(user, title, body, data=None):
             print(f"Lỗi gửi thông báo cho user {user.username}: {e}")
             return 0
     else:
-        # Gửi tin nhắn hàng loạt cho nhiều thiết bị của cùng 1 user
         message = messaging.MulticastMessage(
             notification=notification,
             tokens=tokens,
@@ -72,7 +66,6 @@ def send_bulk_push_notification(title, body, data=None):
     """
     initialize_firebase()
     
-    # Lấy tất cả token của tất cả người dùng đang hoạt động
     devices = FCMDevice.objects.filter(is_active=True)
     tokens = list(devices.values_list('registration_id', flat=True))
 
@@ -84,8 +77,6 @@ def send_bulk_push_notification(title, body, data=None):
         body=body
     )
 
-    # Firebase giới hạn gửi tối đa 500 tokens mỗi lần multicast
-    # Chúng ta sẽ chia nhỏ danh sách tokens nếu cần (Batching)
     success_count = 0
     for i in range(0, len(tokens), 500):
         batch_tokens = tokens[i:i + 500]
