@@ -65,3 +65,39 @@ def send_push_notification(user, title, body, data=None):
         except Exception as e:
             print(f"Lỗi gửi thông báo hàng loạt cho user {user.username}: {e}")
             return 0
+
+def send_bulk_push_notification(title, body, data=None):
+    """
+    Gửi thông báo Push cho TOÀN BỘ thiết bị có trong hệ thống (Global Push)
+    """
+    initialize_firebase()
+    
+    # Lấy tất cả token của tất cả người dùng đang hoạt động
+    devices = FCMDevice.objects.filter(is_active=True)
+    tokens = list(devices.values_list('registration_id', flat=True))
+
+    if not tokens:
+        return 0
+
+    notification = messaging.Notification(
+        title=title,
+        body=body
+    )
+
+    # Firebase giới hạn gửi tối đa 500 tokens mỗi lần multicast
+    # Chúng ta sẽ chia nhỏ danh sách tokens nếu cần (Batching)
+    success_count = 0
+    for i in range(0, len(tokens), 500):
+        batch_tokens = tokens[i:i + 500]
+        message = messaging.MulticastMessage(
+            notification=notification,
+            tokens=batch_tokens,
+            data=data or {}
+        )
+        try:
+            response = messaging.send_multicast(message)
+            success_count += response.success_count
+        except Exception as e:
+            print(f"Lỗi gửi Push hàng loạt tại batch {i}: {e}")
+            
+    return success_count
