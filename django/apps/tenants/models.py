@@ -1,10 +1,18 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
 
 
 class Tenant(models.Model):
     GENDER_CHOICES = [("male", "Nam"), ("female", "Nữ"), ("other", "Khác")]
 
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="tenant_profile"
+    )
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15, unique=True)
     email = models.EmailField(blank=True)
