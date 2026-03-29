@@ -9,3 +9,6 @@ django-environ
 google-generativeai
 celery
 redis
+django-celery-beat
+xhtml2pdf
+python-telegram-bot

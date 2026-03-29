@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.notifications',
     'apps.analytics',
     'apps.ai_search',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -133,6 +134,18 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'send-rent-reminders-daily': {
+        'task': 'apps.billing.tasks.check_and_notify_upcoming_rent',
+        'schedule': crontab(hour=8, minute=0),
+    },
+    'auto-invoice-generation-daily': {
+        'task': 'apps.billing.tasks.check_and_auto_close_monthly_invoice',
+        'schedule': crontab(hour=7, minute=0), # Chạy lúc 7h sáng trước khi nhắc nợ
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
