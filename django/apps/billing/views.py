@@ -2,11 +2,14 @@ from rest_framework import viewsets, filters, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
+from django.db import models
 from .models import Discount, MonthlyInvoice
 from .serializers import DiscountSerializer, MonthlyInvoiceSerializer
 from apps.leases.models import Lease
 from apps.utilities.models import UtilityReading
-from apps.tenants.permissions import IsTenantOwner
+from apps.notifications.models import Notification
+from apps.notifications.utils import send_push_notification
 
 
 class DiscountViewSet(viewsets.ModelViewSet):
@@ -67,10 +70,6 @@ class DiscountViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_201_CREATED)
 
 
-from django.utils import timezone
-from apps.notifications.models import Notification
-
-
 class MonthlyInvoiceViewSet(viewsets.ModelViewSet):
     queryset = MonthlyInvoice.objects.all()
     serializer_class = MonthlyInvoiceSerializer
@@ -85,34 +84,29 @@ class MonthlyInvoiceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, 'tenant_profile'):
+        if not user.is_staff and hasattr(user, 'tenant_profile'):
             return MonthlyInvoice.objects.filter(lease__tenant=user.tenant_profile)
-        from apps.notifications.utils import send_push_notification
+        return super().get_queryset()
 
+    @action(detail=True, methods=['post'])
+    def mark_as_paid(self, request, pk=None):
+        invoice = self.get_object()
+        if invoice.is_paid:
+            return Response({"error": "Hóa đơn này đã được thanh toán rồi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        class MonthlyInvoiceViewSet(viewsets.ModelViewSet):
-        ...
-            @action(detail=True, methods=['post'])
-            def mark_as_paid(self, request, pk=None):
-                invoice = self.get_object()
-                if invoice.is_paid:
-                    return Response({"error": "Hóa đơn này đã được thanh toán rồi"}, status=status.HTTP_400_BAD_REQUEST)
+        invoice.is_paid = True
+        invoice.paid_date = timezone.now().date()
+        invoice.save()
 
-                invoice.is_paid = True
-                invoice.paid_date = timezone.now().date()
-                invoice.save()
+        tenant_user = invoice.lease.tenant.user
+        if tenant_user:
+            title = "Thanh toán thành công"
+            message = f"Hóa đơn tháng {invoice.billing_month.strftime('%m/%Y')} cho phòng {invoice.lease.room.name} đã được thanh toán thành công. Cảm ơn bạn!"
 
-                tenant_user = invoice.lease.tenant.user
-                if tenant_user:
-                    title = "Thanh toán thành công"
-                    message = f"Hóa đơn tháng {invoice.billing_month.strftime('%m/%Y')} cho phòng {invoice.lease.room.name} đã được thanh toán thành công. Cảm ơn bạn!"
+            Notification.objects.create(recipient=tenant_user, title=title, message=message, level="success")
+            send_push_notification(tenant_user, title, message)
 
-                    Notification.objects.create(recipient=tenant_user, title=title, message=message, level="success")
-
-                    send_push_notification(tenant_user, title, message)
-
-                return Response({"status": "Hóa đơn đã được xác nhận thanh toán", "paid_date": invoice.paid_date})
-
+        return Response({"status": "Hóa đơn đã được xác nhận thanh toán", "paid_date": invoice.paid_date})
 
     @action(detail=False, methods=['post'])
     def generate(self, request):

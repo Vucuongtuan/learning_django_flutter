@@ -6,3 +6,6 @@ firebase-admin
 psycopg2-binary
 pgvector
 django-environ
+google-generativeai
+celery
+redis

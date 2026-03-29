@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class Room(models.Model):
     STATUS_CHOICES = [
         ("available", "Available / Trống"),
@@ -12,13 +11,15 @@ class Room(models.Model):
     name = models.CharField(max_length=50, unique=True)
     price = models.PositiveIntegerField(default=0)
     capacity = models.PositiveIntegerField(default=1)
-...
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="available"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._original_price = self.price
+        self._original_price = getattr(self, 'price', 0)
 
     class Meta:
         ordering = ['name']
@@ -43,7 +44,7 @@ class Room(models.Model):
             self._original_price = self.price
 
     def __str__(self):
-...        return f"{self.name} ({self.get_status_display()})"
+        return f"{self.name} ({self.get_status_display()})"
 
 
 class RoomImage(models.Model):
