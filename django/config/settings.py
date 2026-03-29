@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.billing',
     'apps.notifications',
     'apps.analytics',
+    'apps.ai_search',
 ]
 
 MIDDLEWARE = [
@@ -124,6 +125,14 @@ ADMIN_EMAIL = 'admin@yourdomain.com'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery Configuration
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
