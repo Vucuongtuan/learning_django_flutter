@@ -3,3 +3,6 @@ djangorestframework
 django-filter
 djangorestframework-simplejwt
 firebase-admin
+psycopg2-binary
+pgvector
+django-environ
