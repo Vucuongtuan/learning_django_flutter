@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import FirebaseCore
 
 @main
 class AppDelegate: FlutterAppDelegate {
@@ -9,5 +10,10 @@ class AppDelegate: FlutterAppDelegate {
 
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
+  }
+
+  override func applicationDidFinishLaunching(_ notification: Notification) {
+    FirebaseApp.configure()
+    NSApplication.shared.registerForRemoteNotifications()
   }
 }

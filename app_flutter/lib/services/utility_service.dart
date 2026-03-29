@@ -8,7 +8,7 @@ class UtilityService {
     final queryParams = <String, String>{};
     if (roomId != null) queryParams['room'] = roomId.toString();
     if (type != null) queryParams['type'] = type;
-    final data = await _api.get('/utility-readings/', queryParams: queryParams.isNotEmpty ? queryParams : null);
+    final data = await _api.get('/utilities/readings/', queryParams: queryParams.isNotEmpty ? queryParams : null);
     return _api.parseList(data, UtilityReading.fromJson);
   }
 
@@ -19,7 +19,7 @@ class UtilityService {
     required double previousReading,
     required double currentReading,
   }) async {
-    final data = await _api.post('/utility-readings/', body: {
+    final data = await _api.post('/utilities/readings/', body: {
       'room': roomId,
       'type': type,
       'billing_month': billingMonth,

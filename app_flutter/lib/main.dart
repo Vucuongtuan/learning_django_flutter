@@ -1,13 +1,28 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_flutter/theme/app_theme.dart';
+import 'package:app_flutter/services/auth_service.dart';
+import 'package:app_flutter/services/fcm_service.dart';
 import 'package:app_flutter/screens/intro/intro_screen.dart';
+import 'package:app_flutter/screens/auth/login_screen.dart';
 import 'package:app_flutter/screens/dashboard/dashboard_screen.dart';
 import 'package:app_flutter/screens/room_list/room_list_screen.dart';
 import 'package:app_flutter/screens/utility_entry/utility_entry_screen.dart';
 import 'package:app_flutter/screens/invoice_detail/invoice_detail_screen.dart';
 
-void main() {
+bool get _supportsFirebase =>
+    kIsWeb || Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (_supportsFirebase) {
+    await Firebase.initializeApp();
+  }
+
   runApp(const SmartMeterApp());
 }
 
@@ -33,18 +48,30 @@ class SplashGate extends StatefulWidget {
 }
 
 class _SplashGateState extends State<SplashGate> {
+  final AuthService _authService = AuthService();
+
   bool? _hasSeenIntro;
+  bool? _isLoggedIn;
 
   @override
   void initState() {
     super.initState();
-    _checkFirstLaunch();
+    _initialize();
   }
 
-  Future<void> _checkFirstLaunch() async {
+  Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool('has_seen_intro') ?? false;
-    setState(() => _hasSeenIntro = seen);
+    final loggedIn = await _authService.tryAutoLogin();
+
+    setState(() {
+      _hasSeenIntro = seen;
+      _isLoggedIn = loggedIn;
+    });
+
+    if (loggedIn) {
+      await FcmService.instance.initialize();
+    }
   }
 
   Future<void> _completeIntro() async {
@@ -53,9 +80,14 @@ class _SplashGateState extends State<SplashGate> {
     setState(() => _hasSeenIntro = true);
   }
 
+  void _onLoginSuccess() async {
+    await FcmService.instance.initialize();
+    setState(() => _isLoggedIn = true);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_hasSeenIntro == null) {
+    if (_hasSeenIntro == null || _isLoggedIn == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -63,6 +95,10 @@ class _SplashGateState extends State<SplashGate> {
 
     if (_hasSeenIntro == false) {
       return IntroScreen(onComplete: _completeIntro);
+    }
+
+    if (_isLoggedIn == false) {
+      return LoginScreen(onLoginSuccess: _onLoginSuccess);
     }
 
     return const MainScreen();
